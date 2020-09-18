@@ -15,17 +15,6 @@ public class ProducerDemo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProducerDemo.class.getName());
 
-    public static void main(String[] args) {
-        try {
-            ProducerDemo pDemo = new ProducerDemo();
-            pDemo.testProducer();
-            Properties props = pDemo.readPropertiesFile("application.properties");
-            LOGGER.info("Props : " + props);
-        } catch (Exception e) {
-            LOGGER.error(" Error ", e);
-        }
-    }
-
     public void testProducer() {
         KafkaProducer<String, String> producer = null;
         try {
