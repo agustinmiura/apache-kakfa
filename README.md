@@ -1,2 +1,4 @@
-# apache-kakfa
-Apache Kafka and Java .
+# Apache-kakfa
+
+Apache Kafka exercises .
+
