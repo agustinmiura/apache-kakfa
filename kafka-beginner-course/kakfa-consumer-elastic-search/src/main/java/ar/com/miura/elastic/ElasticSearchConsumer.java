@@ -55,21 +55,28 @@ public class ElasticSearchConsumer {
         //poll for new data
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+            LOGGER.info(" Received records : {} ", records.count());
             records.iterator().forEachRemaining(eachRecord -> {
                 try {
                     String id = extractId(eachRecord.value());
                     IndexRequest indexRequest = new IndexRequest("twitter", "tweets", id);
                     indexRequest.source(eachRecord.value(), XContentType.JSON);
-                    IndexResponse response = null;
+                    IndexResponse response = client.index(indexRequest, RequestOptions.DEFAULT);
 
-                    response = client.index(indexRequest, RequestOptions.DEFAULT);
-
-                    Thread.sleep(1000);
+                    Thread.sleep(10);
                     LOGGER.info("The id : {} ", id);
                 } catch (IOException | InterruptedException ioException) {
                     LOGGER.error(" Error ", ioException);
                 }
             });
+            LOGGER.info(" Commiting the offsets ");
+            consumer.commitSync();
+            LOGGER.info(" Offsets have been commited");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -100,6 +107,8 @@ public class ElasticSearchConsumer {
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, fromConfig.getProperty("consumer.group.id"));
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, fromConfig.getProperty("consumer.offset.reset.early"));
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1");
 
         //Create a consumer
         KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
