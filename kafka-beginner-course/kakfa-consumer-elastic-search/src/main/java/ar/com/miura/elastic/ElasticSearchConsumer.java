@@ -13,12 +13,11 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.*;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import static ar.com.miura.Utils.readPropertiesFile;
@@ -55,28 +55,30 @@ public class ElasticSearchConsumer {
         //poll for new data
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
-            LOGGER.info(" Received records : {} ", records.count());
-            records.iterator().forEachRemaining(eachRecord -> {
-                try {
-                    String id = extractId(eachRecord.value());
-                    IndexRequest indexRequest = new IndexRequest("twitter", "tweets", id);
-                    indexRequest.source(eachRecord.value(), XContentType.JSON);
-                    IndexResponse response = client.index(indexRequest, RequestOptions.DEFAULT);
+            int receivedRecords = records.count();
+            LOGGER.info(" Received records : {} ", receivedRecords);
 
-                    Thread.sleep(10);
-                    LOGGER.info("The id : {} ", id);
-                } catch (IOException | InterruptedException ioException) {
-                    LOGGER.error(" Error ", ioException);
-                }
+            BulkRequest bulkRequest = new BulkRequest();
+            records.iterator().forEachRemaining(eachRecord -> {
+                    var optionalString = extractId(eachRecord.value());
+                    IndexRequest indexRequest = new IndexRequest("twitter", "tweets", optionalString.orElse("invalidId"));
+                    indexRequest.source(eachRecord.value(), XContentType.JSON);
+                    bulkRequest.add(indexRequest);
             });
+            if (receivedRecords>=1) {
+                try {
+                    BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+                    LOGGER.info(" BulkResponse answer is {} ", bulkResponse);
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    LOGGER.error(" Error sleeping ", e);
+                }
+            }
             LOGGER.info(" Commiting the offsets ");
+
             consumer.commitSync();
             LOGGER.info(" Offsets have been commited");
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+
         }
     }
 
@@ -108,7 +110,7 @@ public class ElasticSearchConsumer {
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, fromConfig.getProperty("consumer.group.id"));
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, fromConfig.getProperty("consumer.offset.reset.early"));
         properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1");
+        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "2");
 
         //Create a consumer
         KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
@@ -117,8 +119,8 @@ public class ElasticSearchConsumer {
         return consumer;
     }
 
-    private String extractId(String tweetJson) {
+    private Optional<String> extractId(String tweetJson) {
         Map map =gson.fromJson(tweetJson, Map.class);
-        return (String) map.get("id_str");
+        return Optional.ofNullable((String)map.get("id_str"));
     }
 }
