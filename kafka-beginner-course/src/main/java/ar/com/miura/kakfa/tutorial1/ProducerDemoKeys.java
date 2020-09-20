@@ -16,6 +16,15 @@ public class ProducerDemoKeys {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProducerDemo.class.getName());
 
+    public static void main(String[] args) {
+        try {
+            ProducerDemo demo = new ProducerDemo();
+            demo.testProducer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void testProducer() throws IOException {
         final KafkaProducer<String, String> producer;
         Properties properties = new Properties();
