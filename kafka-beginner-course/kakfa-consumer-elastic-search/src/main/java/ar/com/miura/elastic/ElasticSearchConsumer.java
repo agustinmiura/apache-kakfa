@@ -1,5 +1,8 @@
 package ar.com.miura.elastic;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -9,7 +12,6 @@ import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
@@ -24,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 
 import static ar.com.miura.Utils.readPropertiesFile;
@@ -31,6 +34,8 @@ import static ar.com.miura.Utils.readPropertiesFile;
 public class ElasticSearchConsumer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchConsumer.class.getName());
+
+    private Gson gson = (new GsonBuilder().create());
 
     public static void main(String[] args) {
         try {
@@ -52,15 +57,12 @@ public class ElasticSearchConsumer {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
             records.iterator().forEachRemaining(eachRecord -> {
                 try {
-                    LOGGER.info(" Key : {} , Value : {} , Partition : {} ", eachRecord.key(), eachRecord.value(), eachRecord.partition());
-
-                    IndexRequest indexRequest = new IndexRequest("twitter", "tweets");
+                    String id = extractId(eachRecord.value());
+                    IndexRequest indexRequest = new IndexRequest("twitter", "tweets", id);
                     indexRequest.source(eachRecord.value(), XContentType.JSON);
                     IndexResponse response = null;
 
                     response = client.index(indexRequest, RequestOptions.DEFAULT);
-
-                    String id = response.getId();
 
                     Thread.sleep(1000);
                     LOGGER.info("The id : {} ", id);
@@ -104,5 +106,10 @@ public class ElasticSearchConsumer {
         //Suscribe consumer to our topic
         consumer.subscribe(Collections.singleton(fromConfig.getProperty("topic.name")));
         return consumer;
+    }
+
+    private String extractId(String tweetJson) {
+        Map map =gson.fromJson(tweetJson, Map.class);
+        return (String) map.get("id_str");
     }
 }
