@@ -1,7 +1,5 @@
 package ar.com.miura.fullexample;
 
-import ar.com.miura.Utils;
-import ar.com.miura.kakfa.tutorial1.ConsumerDemo;
 import com.google.common.collect.Lists;
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Client;
@@ -57,7 +55,7 @@ public class TwitterProducer {
         hosebirdEndpoint.trackTerms(terms);
 
         // These secrets should be read from a config file
-        Properties properties = Utils.readPropertiesFile("twitter.properties", this.getClass());
+        Properties properties = readPropertiesFile("twitter.properties", this.getClass());
         Authentication hosebirdAuth = new OAuth1(properties.getProperty("api.key"), properties.getProperty("api.secret"), properties.getProperty("api.token"), properties.getProperty("api.token.secret"));
 
         ClientBuilder builder = new ClientBuilder()
