@@ -1,6 +1,11 @@
 Examples for Java 
 =================
 
+In the package :
+
+* ar.com.miura.kakfa.tutorial1 : Examples for Kafka.
+* ar.com.miura.kafka.fullexample: Consume tweets from the api and send them to Kafka and stored them in an Elastic Search instance .
+
 * Start the Apache Kafka cluster.
 
 * For the producer example execute the following code:
