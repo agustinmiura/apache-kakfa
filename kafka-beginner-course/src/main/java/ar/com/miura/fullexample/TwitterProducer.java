@@ -53,7 +53,7 @@ public class TwitterProducer {
         StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
 
         List<Long> followings = Lists.newArrayList(1234L, 566788L);
-        List<String> terms = Lists.newArrayList("bitcoin");
+        List<String> terms = Lists.newArrayList("bitcoin", "usa", "politics");
         hosebirdEndpoint.trackTerms(terms);
 
         // These secrets should be read from a config file
@@ -77,6 +77,8 @@ public class TwitterProducer {
 
         Client client = createTwitterClient(msgQueue);
         client.connect();
+
+
 
         KafkaProducer<String, String> kafkaProducer =  createKakfaProducer();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -118,6 +120,11 @@ public class TwitterProducer {
         properties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
         properties.setProperty(ProducerConfig.RETRIES_CONFIG, Integer.toString(Integer.MAX_VALUE));
         properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "5");//For Kafka 2.0 use 5 in another case use 1
+
+        //increase throughput , increase cpu usage , increase latency.
+        properties.setProperty(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+        properties.setProperty(ProducerConfig.LINGER_MS_CONFIG, "20");
+        properties.setProperty(ProducerConfig.BATCH_SIZE_CONFIG, Integer.toString(32*1024));
 
         return new KafkaProducer<String, String>(properties);
     }
