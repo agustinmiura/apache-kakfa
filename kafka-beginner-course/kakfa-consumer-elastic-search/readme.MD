@@ -10,3 +10,4 @@ Twitter Example
 * Create an account in ```https://app.bonsai.io/clusters/kafka-course-9094228913?hsmd=tail&hswd=900000&hstw=86400000``` to have access to an Elastic Search instance.
 * Create an index named ```twitter``` in the Elastic Search instance .
 * Check the status of the consumer ```kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --group kakfa-demo-elasticsearch --describe```
+* Reset the offsets of the consumers : ```kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --group kakfa-demo-elasticsearch --reset-offsets -execute -to-earliest --topic twitter_tweets```
