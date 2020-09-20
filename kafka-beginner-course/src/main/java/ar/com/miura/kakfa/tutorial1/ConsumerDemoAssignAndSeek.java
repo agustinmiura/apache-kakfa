@@ -3,30 +3,20 @@ package ar.com.miura.kakfa.tutorial1;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
 import static ar.com.miura.Utils.readPropertiesFile;
 
-public class ConsumerDemoWithKeys {
+public class ConsumerDemoAssignAndSeek {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerDemoWithKeys.class.getName());
-
-    public static void main(String [] args) {
-        try {
-            ConsumerDemoWithKeys demo = new ConsumerDemoWithKeys();
-            demo.testConsumer();
-        }catch(Exception e) {
-            LOGGER.error(" Error with the demo ", e);
-        }
-
-    }
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerDemoAssignAndSeek.class.getName());
 
     public void testConsumer() throws IOException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -38,14 +28,16 @@ public class ConsumerDemoWithKeys {
             properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, fromConfig.getProperty("server.url"));
             properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-            properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, fromConfig.getProperty("consumer.group.id.new"));
             properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, fromConfig.getProperty("consumer.offset.reset.early"));
 
             KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
-            consumer.subscribe(Collections.singleton(fromConfig.getProperty("topic.name")));
 
+            TopicPartition topicPartition = new TopicPartition(fromConfig.getProperty("topic.name"), 0);
+            consumer.assign(Arrays.asList(topicPartition));
 
-            ConsumerRunnable consumerRunnable = new ConsumerRunnable(countDownLatch, consumer);
+            consumer.seek(topicPartition, 15L);
+
+            SeekAssignRunnable consumerRunnable = new SeekAssignRunnable(countDownLatch, consumer);
             Thread thread = new Thread(consumerRunnable);
             thread.start();
 
@@ -63,8 +55,7 @@ public class ConsumerDemoWithKeys {
         } catch(InterruptedException e) {
             LOGGER.error(" Error app interrupted ", e);
         } finally {
-          LOGGER.info(" App finished");
+            LOGGER.info(" App finished");
         }
-
     }
 }
