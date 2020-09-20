@@ -26,5 +26,5 @@ kafka-topics.sh --list --zookeeper localhost:2181
 ```
 Create an Apache Kafka Topic with 3 partitions
 ```
-kafka-topics.sh --zookeeper 127.0.0.1:2181 --create --topic first_topic_1 --partitions 3  1
+kafka-topics.sh --zookeeper 127.0.0.1:2181 --create --topic twitter_tweets --partitions 3  1
 ```
