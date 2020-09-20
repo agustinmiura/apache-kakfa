@@ -2,3 +2,6 @@ api.key=ssssssssssssss
 api.secret=Dddddddddddddddddd
 api.token=dddddddddddddd
 api.secret=22333333333333333
+elastic.url=hello
+elastic.access.key=hello
+elastic.access.secrete=password

@@ -28,13 +28,3 @@ Create an Apache Kafka Topic with 3 partitions
 ```
 kafka-topics.sh --zookeeper 127.0.0.1:2181 --create --topic first_topic_1 --partitions 3  1
 ```
-Twitter Example
-==============
-
-* Copy ```twitter.properties.sample``` to ```twitter.properties```
-* Register an app in Twitter .
-* Add full permissions to the app.
-* Run the example
-* Create the topic : ```kafka-topics.sh --zookeeper 127.0.0.1:2181 --create --topic twitter_tweets --partitions 6 --replication-factor 1```
-* Create a consumer to check : ```kafka-console-consumer.sh --bootstrap-server 127.0.0.1:9092 --topic twitter_tweets```
-* 
