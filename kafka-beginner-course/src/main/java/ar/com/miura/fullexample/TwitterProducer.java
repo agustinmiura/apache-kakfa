@@ -13,6 +13,10 @@ import com.twitter.hbc.core.event.Event;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +26,8 @@ import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import static ar.com.miura.Utils.readPropertiesFile;
 
 public class TwitterProducer {
 
@@ -72,6 +78,13 @@ public class TwitterProducer {
         Client client = createTwitterClient(msgQueue);
         client.connect();
 
+        KafkaProducer<String, String> kafkaProducer =  createKakfaProducer();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOGGER.info(" Shutdown of the app : ");
+            client.stop();
+            kafkaProducer.close();
+        }));
+
         while (!client.isDone()) {
             String msg = null;
             try {
@@ -82,8 +95,23 @@ public class TwitterProducer {
             }
             if (msg != null) {
                 LOGGER.info(" The message is {} ", msg);
+                kafkaProducer.send(new ProducerRecord<>("twitter_tweets", null, msg), (recordMetadata, e) -> {
+                    if (e !=null) {
+                        LOGGER.error(" Error sending message ", e);
+                    }
+                });
             }
         }
         LOGGER.info(" End of application ");
+    }
+
+    public KafkaProducer<String, String> createKakfaProducer() throws IOException {
+        final KafkaProducer<String, String> producer;
+        Properties properties = new Properties();
+        Properties fromConfig = readPropertiesFile("application.properties", this.getClass());;
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, fromConfig.getProperty("server.url"));
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        return new KafkaProducer<String, String>(properties);
     }
 }
