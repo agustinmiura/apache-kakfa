@@ -6,12 +6,11 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 import java.util.stream.IntStream;
+
+import static ar.com.miura.Utils.readPropertiesFile;
 
 public class ProducerDemoKeys {
 
@@ -25,7 +24,7 @@ public class ProducerDemoKeys {
     public void testProducer() throws IOException {
         final KafkaProducer<String, String> producer;
         Properties properties = new Properties();
-        Properties fromConfig = readPropertiesFile("application.properties");
+        Properties fromConfig = readPropertiesFile("application.properties", this.getClass());
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, fromConfig.getProperty("server.url"));
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
@@ -58,19 +57,6 @@ public class ProducerDemoKeys {
                 producer.close();
             }
         }
-    }
-
-    public Properties readPropertiesFile(String fileName) throws IOException {
-        Properties prop = null;
-        try(InputStream is = getClass().getClassLoader().getResourceAsStream(fileName)) {
-            prop = new Properties();
-            prop.load(is);
-        } catch(FileNotFoundException fnfe) {
-            LOGGER.error(" Error ", fnfe);
-        } catch(IOException ioe) {
-            LOGGER.error(" IOException ", ioe);
-        }
-        return prop;
     }
 
 }
