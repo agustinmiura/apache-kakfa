@@ -1,14 +1,17 @@
 package ar.com.miura.kakfa.tutorial1;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.Collections;
 import java.util.Properties;
-import java.util.stream.IntStream;
 
 import static ar.com.miura.Utils.readPropertiesFile;
 
@@ -31,37 +34,30 @@ public class ConsumerDemo {
         final KafkaProducer<String, String> producer;
         Properties properties = new Properties();
         Properties fromConfig = readPropertiesFile("application.properties", this.getClass());
-        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, fromConfig.getProperty("server.url"));
-        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        producer= new KafkaProducer<String, String>(properties);
-        try {
-            int index = 0;
-            IntStream stream = IntStream.iterate(0, i -> i+1).limit(10);
-            stream.forEach(i -> {
 
-                String topic = fromConfig.getProperty("topic.name");
-                String value = "hello_world" + i;
-                String key = "id_ " + Integer.toString(i);
+        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, fromConfig.getProperty("server.url"));
+        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        /**
+         * consumer.offset.reset.early=earliest
+         * consumer.offset.reset.latest=latest
+         * consumer.offset.reset.none=none
+         */
+        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, fromConfig.getProperty("consumer.group.id"));
+        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, fromConfig.getProperty("consumer.offset.reset.early"));
 
-                LOGGER.info("Key:" + key);
+        //Create a consumer
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
 
-                ProducerRecord<String, String> record  = new ProducerRecord<String, String>(fromConfig.getProperty("topic.name"), key, "Hello world" + i);
-                producer.send(record, (recordMetadata, e) -> {
-                    if (e==null) {
-                        LOGGER.info(" Receive metadata , Topic : {} , Partition : {} , Offsets : {} , Timestamp : {} ", recordMetadata.topic(), recordMetadata.partition(), recordMetadata.offset(), recordMetadata.timestamp());
-                    } else {
-                        LOGGER.error(" Error sending the message ", e);
-                    }
-                });
+        //Suscribe consumer to our topic
+        consumer.subscribe(Collections.singleton(fromConfig.getProperty("topic.name")));
+
+        //poll for new data
+        while(true) {
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+            records.iterator().forEachRemaining(eachRecord -> {
+                LOGGER.info(" Key : {} , Value : {} , Partition : {} ", eachRecord.key(), eachRecord.value(), eachRecord.partition());
             });
-        }catch(Exception e) {
-            LOGGER.error(" Exception ", e);
-        }finally{
-            if (producer!=null) {
-                producer.flush();
-                producer.close();
-            }
         }
     }
 }

@@ -1,9 +1,6 @@
 package ar.com.miura;
-
-import ar.com.miura.kakfa.tutorial1.ConsumerDemo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;

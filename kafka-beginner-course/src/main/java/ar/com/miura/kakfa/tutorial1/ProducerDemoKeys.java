@@ -16,11 +16,6 @@ public class ProducerDemoKeys {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProducerDemo.class.getName());
 
-    public static void main(String[] args) throws IOException {
-        ProducerDemoKeys demoKeys = new ProducerDemoKeys();
-        demoKeys.testProducer();
-    }
-
     public void testProducer() throws IOException {
         final KafkaProducer<String, String> producer;
         Properties properties = new Properties();
@@ -30,12 +25,8 @@ public class ProducerDemoKeys {
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producer= new KafkaProducer<String, String>(properties);
         try {
-            int index = 0;
             IntStream stream = IntStream.iterate(0, i -> i+1).limit(10);
             stream.forEach(i -> {
-
-                String topic = fromConfig.getProperty("topic.name");
-                String value = "hello_world" + i;
                 String key = "id_ " + Integer.toString(i);
 
                 LOGGER.info("Key:" + key);

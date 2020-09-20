@@ -2,12 +2,8 @@ package ar.com.miura.kakfa.tutorial1;
 
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
-
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
-import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
@@ -28,7 +24,6 @@ public class ProducerDemo {
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producer= new KafkaProducer<String, String>(properties);
         try {
-            int index = 0;
             IntStream stream = IntStream.iterate(0, i -> i+1).limit(10);
             stream.forEach(i -> {
                 ProducerRecord<String, String> record  = new ProducerRecord<String, String>(fromConfig.getProperty("topic.name"), "Hello world" + i);
